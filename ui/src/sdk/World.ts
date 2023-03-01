@@ -1,5 +1,5 @@
 import { GUI } from "dat.gui"
-import { Scene, PerspectiveCamera, Mesh, AmbientLight, AxesHelper, WebGLRenderer, Color, HemisphereLight, HemisphereLightHelper, GridHelper, CameraHelper } from "three"
+import { Scene, PerspectiveCamera, Mesh, AmbientLight, AxesHelper, WebGLRenderer, Color, HemisphereLight, HemisphereLightHelper, GridHelper, CameraHelper, Vector3 } from "three"
 
 import { MapControls, OrbitControls } from "three/examples/jsm/controls/OrbitControls" 
 
@@ -22,23 +22,32 @@ export class WorldImpl implements World {
     camera!: PerspectiveCamera
     cameraHelper!: CameraHelper
     renderer!: WebGLRenderer
-    controls!: OrbitControls
+    orbitControl!: OrbitControls
 
     mapControl!: MapControls
 
     hemiHelper!: HemisphereLightHelper
-    root: HTMLElement
     stats: Stats
+
+    posList = new Array<Vector3>()
 
     gridHelper!: GridHelper
 
-    constructor(root: HTMLElement) {
-        this.root = root
+    constructor() {
         this.stats = Stats()
-        this.root.appendChild(this.stats.domElement)
+        document.body.appendChild(this.stats.domElement)
     }
 
     init(): void {
+
+        this.posList.push(
+            new Vector3(0, 200, 0), 
+            new Vector3(100, 200, 0), 
+            new Vector3(0, 100, 100),
+            new Vector3(-100, 200, 0),
+            new Vector3(50, 25, 0),
+            new Vector3(0, 100, -100)
+            )
 
         this.initScene()
         this.initCamera()
@@ -48,12 +57,20 @@ export class WorldImpl implements World {
         this.initControls()
         this.initGui()
         document.addEventListener('resize', this.onWindowResize, false)
+        let i = 0;
+        setInterval(() => {
+            i = (i + 1) % this.posList.length
+            if (Config.Camare.Control && !Config.Camare.Lock) {
+                let p = this.posList[i]
+                this.moveCamera(p)
+            }
+        }, 5000)
     }
 
     onWindowResize(): void {
-        this.camera.aspect = this.root.clientWidth, this.root.clientHeight
-        this.camera.updateProjectionMatrix()
-        this.renderer.setSize(this.root.clientWidth, this.root.clientHeight)
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
     }
 
     initScene() {
@@ -69,9 +86,7 @@ export class WorldImpl implements World {
 
         this.gridHelper = new GridHelper(
             size, 
-            tiles, 
-            //new Color(0x000000), 
-           // new Color(0x000044)
+            tiles
         )
         this.gridHelper.layers.set(Layers.Helper)
         this.scene.add(this.gridHelper)
@@ -79,7 +94,6 @@ export class WorldImpl implements World {
     }
 
     initLight() {
-
         var ambient = new AmbientLight(0xffffff, 1) //AmbientLight,影响整个场景的光源 
         ambient.layers.set(Layers.Light)       
         this.scene.add(ambient)
@@ -97,7 +111,7 @@ export class WorldImpl implements World {
     initCamera(): void {
         this.camera = new PerspectiveCamera(
             75,
-            this.root.clientWidth / this.root.clientHeight,
+            window.innerWidth / window.innerHeight,
             0.1,
             Config.Camare.Far
         )
@@ -105,44 +119,49 @@ export class WorldImpl implements World {
         this.cameraHelper = new CameraHelper(this.camera)
         this.cameraHelper.layers.set(Layers.Helper)
         this.scene.add(this.cameraHelper)
-        this.camera.position.set(Config.Camare.NormalPos.x, Config.Camare.NormalPos.y, Config.Camare.NormalPos.z)
+        this.moveCamera(new Vector3(0, 200, 0))
         this.camera.lookAt(0, 0, 0)
+    }
+
+    moveCamera(pos: Vector3): void {
+        this.camera.position.copy(pos)
+        this.camera.updateMatrixWorld()
     }
 
     initRender(): void {
         this.renderer = new WebGLRenderer({ antialias: true })
         this.renderer.setClearColor(new Color(0xeeeeee))
-        this.renderer.setSize(this.root.clientWidth, this.root.clientHeight)
-        this.root.appendChild(this.renderer.domElement);
+        this.renderer.setSize(window.innerWidth, window.innerHeight)
+        document.body.appendChild(this.renderer.domElement);
     }
 
     initControls(): void {
-        // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        // this.controls.enableDamping = true;
-        // this.controls.dampingFactor = 0.5;
-        // // 视角最小距离
-        // this.controls.minDistance = 10;
-        // // 视角最远距离
-        // this.controls.maxDistance = 50000;
-        // // 最大角度
-        // this.controls.maxPolarAngle = Math.PI / 2.2;
+        this.orbitControl = new OrbitControls(this.camera, this.renderer.domElement);
+        //this.orbitControl.enableDamping = true;
+        //this.orbitControl.dampingFactor = 0.5;
+        // 视角最小距离
+        this.orbitControl.minDistance = 10;
+        // 视角最远距离
+        this.orbitControl.maxDistance = 50000;
+        // 最大角度
+        this.orbitControl.maxPolarAngle = Math.PI / 2.2;
 
-        // this.controls.autoRotate = true
+        this.orbitControl.autoRotate = true
 
-        // this.controls.target = new Vector3(0, 0, 0)
+        this.orbitControl.target = new Vector3(0, 0, 0)
 
 
-        this.mapControl = new MapControls(this.camera, this.renderer.domElement)
+        // this.mapControl = new MapControls(this.camera, this.renderer.domElement)
 
-        this.mapControl.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-        this.mapControl.dampingFactor = 0.05;
+        // // this.mapControl.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        // this.mapControl.dampingFactor = 0.05;
 
-        this.mapControl.screenSpacePanning = false;
+        // this.mapControl.screenSpacePanning = false;
 
-        this.mapControl.minDistance = 100;
-        this.mapControl.maxDistance = 500;
+        // this.mapControl.minDistance = 100;
+        // this.mapControl.maxDistance = 500;
 
-        this.mapControl.maxPolarAngle = Math.PI / 2;
+        // this.mapControl.maxPolarAngle = Math.PI / 2;
     }
 
     initGui():void {
@@ -152,6 +171,11 @@ export class WorldImpl implements World {
         let cf = gui.addFolder('Camera')
         
         cf.add(Config.Camare, 'Control')
+        cf.add(Config.Camare, 'Lock').onChange(() => {
+            if (Config.Camare.Lock) {
+                this.moveCamera(new Vector3(0, 200, 0))
+            }
+        })
         
         cf.open()
 
@@ -178,9 +202,9 @@ export class WorldImpl implements World {
             this.animate()
         })
         if (Config.Camare.Control) {
-            this.controls?.update()
+            this.orbitControl?.update()
         }
-        this.mapControl?.update()
+        // this.mapControl?.update()
 
         if (Config.Layer.Environment) {
             this.camera.layers.enable(Layers.Environment)

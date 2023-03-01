@@ -11,6 +11,7 @@ const GlobalConfig = {
     UnitLegth: UnitLegth,
     TilesW: TilesW,
     TilesH: TilesH,
+    Offset: new Vector3(0, 0, 80),
     Container: {
         Width: UnitLegth // 托盘占用一个瓦片大小
     }
@@ -19,6 +20,7 @@ const GlobalConfig = {
 const CamareConfig = {
     location: 'normal',
     Control: false,
+    Lock: false,
     Far: 3000, // 摄像机最大视野
     NormalPos: new Vector3(0, 200, 200)
 }

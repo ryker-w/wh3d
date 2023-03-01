@@ -37,6 +37,7 @@ export default class WhStoryBoard extends StoryBoard {
     loadFloor(): void {
 
         let s = Util.calcSize(new Vector3(FloorConfig.floorW, 1, FloorConfig.floorH))
+        let floorFrom = Util.calcSize
         let p = Util.transPos(new Vector3(0, 0, 0), new Vector3(FloorConfig.floorW, 0, FloorConfig.floorH))
         let ground = new Ground(p, new Vector2(s.x, s.z))
         this.add(ground.mesh)
@@ -129,6 +130,18 @@ export default class WhStoryBoard extends StoryBoard {
 
     loadContainer(c: ContainerInfo) {
         let container = new Container()
+        let p = c.tileRelative
+        switch (p.y) {
+            case 0: // 一层
+                container.setMaterial(Resources.Goods0)
+                break
+            case 1: // 二层
+                container.setMaterial(Resources.Goods1)
+                break
+            case 2: // 三层
+                container.setMaterial(Resources.Goods2)
+                break
+        }
         let mesh = container.mesh
 
         mesh.position.set(c.pos.x, c.pos.y, c.pos.z)
@@ -156,23 +169,6 @@ export default class WhStoryBoard extends StoryBoard {
     }
 
     loadOthers() {
-        let slogen = OtherConfig.slogen
-        let lab = new Label(slogen, 6)
-        let mesh = lab.mesh
-        mesh.position.set(-40, 1, 30)
-    
-        mesh.rotation.x = -Math.PI / 2.0
-
-        this.add(mesh)
-
-        let logo = OtherConfig.logo
-        let logoLabel = new Label(logo, 6)
-        let logoMesh = logoLabel.mesh
-        logoMesh.position.set(-10, 1, 10)
-    
-        logoMesh.rotation.x = -Math.PI / 2.0
-
-        this.add(logoMesh)
     }
 
     removeContainer(name: string) {
